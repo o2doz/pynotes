@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notes — terminal papier</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="terminal">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">NOTES.EXE · CLIENT JSON</p>
+          <h1>Mes notes</h1>
+        </div>
+        <div class="connection" aria-label="Connexion à l'API">
+          <label for="api-url">API</label>
+          <input id="api-url" type="url" value="http://127.0.0.1:5000" />
+          <button id="connect-button" type="button">Connecter</button>
+        </div>
+      </header>
+
+      <p id="status" class="status" role="status">Prêt. Connexion à l'API en attente.</p>
+
+      <div class="workspace">
+        <aside class="sidebar">
+          <div class="sidebar-title">
+            <h2>INDEX DES NOTES</h2>
+            <button id="new-button" class="small-button" type="button">+ Nouvelle</button>
+          </div>
+          <ul id="notes-list" class="notes-list" aria-label="Liste des notes"></ul>
+        </aside>
+
+        <section class="editor" aria-labelledby="editor-title">
+          <div class="editor-heading">
+            <h2 id="editor-title">Nouvelle note</h2>
+            <span id="note-id">NON ENREGISTRÉE</span>
+          </div>
+
+          <form id="note-form">
+            <label for="title">TITRE</label>
+            <input id="title" name="title" type="text" maxlength="100" required />
+
+            <label for="content">CONTENU</label>
+            <textarea id="content" name="content" maxlength="5000" required></textarea>
+
+            <div class="actions">
+              <button id="save-button" type="submit">Enregistrer</button>
+              <button id="delete-button" class="danger" type="button" disabled>Supprimer</button>
+              <button id="cancel-button" class="secondary" type="button">Annuler</button>
+            </div>
+          </form>
+
+          <p class="hint">POST pour créer · PUT pour modifier · DELETE pour supprimer</p>
+        </section>
+      </div>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
