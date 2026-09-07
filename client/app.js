@@ -13,7 +13,6 @@ const deleteButton = document.querySelector("#delete-button");
 
 // Construit une URL sans produire deux slashs entre l'adresse et le chemin.
 function apiUrl(path) {
-  print(apiUrl)
   return `${apiUrlInput.value.trim().replace(/\/$/, "")}${path}`;
 }
 

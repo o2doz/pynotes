@@ -37,10 +37,9 @@ Comment vérifier une réponse JSON d'un serveur Flask dans le navigateur ou ave
 
 Avant de stocker des notes, représentez une note avec une classe Python.
 
-1. Créez un emplacement logique pour vos modèles, par exemple `models/`.
-2. Réfléchissez aux trois informations qu'une note doit contenir selon le contrat : `id`, `title` et `content`.
-3. Votre classe doit permettre de transformer une note en dictionnaire afin que Flask puisse l'envoyer en JSON.
-4. Testez la classe dans un petit fichier Python ou dans le terminal avant de l'utiliser dans Flask.
+1. Réfléchissez aux trois informations qu'une note doit contenir selon le contrat : `id`, `title` et `content`.
+2. Votre classe doit permettre de transformer une note en dictionnaire afin que Flask puisse l'envoyer en JSON.
+3. Testez la classe dans un petit fichier Python ou dans le terminal avant de l'utiliser dans Flask.
 
 Ne commencez pas par la base de données : vérifiez d'abord que vous comprenez ce qu'est un objet `Note` et comment il devient un dictionnaire.
 
