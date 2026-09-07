@@ -1,6 +1,6 @@
 # Partie 2 — Introduire la programmation orientée objet
 
-Prérequis : [partie 1](01-routes-et-memoire.md) terminée et testée.
+Prérequis : [partie 1](01-routes-et-memoire.md) terminée.
 
 ## Objectif
 
@@ -31,6 +31,8 @@ Répartition attendue :
 
 **Recherche nécessaire — POO :** lire les notions de classe, instance, `__init__`, `self`, attribut d'instance et méthode dans le [tutoriel Python](https://docs.python.org/fr/3/tutorial/classes.html).
 
+**Repères concrets à classer :** `request.get_json()`, `self.title`, `get_by_id(note_id)`, `jsonify(...)` et `self.notes.append(note)`. TODO : associer chaque expression à une ligne du tableau et justifier votre choix.
+
 **À expliquer :** pourquoi une note ne doit-elle pas connaître Flask ? Quelle différence entre une classe et les deux objets créés à partir de cette classe ?
 
 ## 2 — Écrire la classe Note
@@ -42,24 +44,24 @@ Créer `server/src/server/note.py`.
 3. Stocker ces valeurs dans des attributs d'instance.
 4. Ajouter une méthode `to_dict()` qui renvoie un dictionnaire contenant exactement ces trois champs.
 
-Ne pas appeler `jsonify` dans cette classe : convertir en dictionnaire est une opération Python indépendante de Flask.
-
-Petit test utilisable une fois votre classe écrite :
+**Amorce à compléter :**
 
 ```python
-note = Note(7, "POO", "Comprendre les instances.")
-assert note.to_dict() == {
-    "id": 7,
-    "title": "POO",
-    "content": "Comprendre les instances.",
-}
+class Note:
+    def __init__(self, id, title, content):
+        self.id = id
+        # TODO : conserver les deux autres informations sur l'instance.
+
+    def to_dict(self):
+        # TODO : renvoyer un dictionnaire, pas une chaîne JSON.
+        raise NotImplementedError
 ```
 
-**TODO :** ajouter vous-même l'import nécessaire et créer une deuxième note. Modifier le titre de la première, puis vérifier que la seconde n'a pas changé.
+**Repères :** accéder à un attribut avec `self.title` dans une méthode ou `note.title` depuis le code appelant. Pour l'import dans un autre module du package, partir de `from .note import Note` ; rechercher pourquoi cet import relatif suppose une exécution dans le contexte du package.
 
-**Recherche nécessaire — Python :** chercher comment importer une classe depuis un module du même package. Exécuter les tests depuis `server/` avec `uv run python` ou un petit script adapté.
+Ne pas appeler `jsonify` dans cette classe : convertir en dictionnaire est une opération Python indépendante de Flask.
 
-**Validation :** la classe fonctionne sans démarrer Flask.
+**Recherche nécessaire — Python/POO :** chercher comment importer une classe depuis un module du même package. La classe `Note` doit rester indépendante de Flask.
 
 ## 3 — Fixer le contrat du stockage
 
@@ -77,6 +79,19 @@ Le repository reçoit des titres et contenus déjà validés par les routes. Il 
 
 **TODO :** écrire les signatures de ces méthodes, puis les implémenter une par une aux étapes suivantes. Les annotations de type sont facultatives ; les valeurs de retour demandées ne le sont pas.
 
+**Amorce de signature :**
+
+```python
+class MemoryNoteRepository:
+    def get_by_id(self, note_id):
+        # TODO : chercher dans la collection de cette instance.
+        raise NotImplementedError
+```
+
+TODO : ajouter les quatre autres méthodes du tableau avec `self` comme premier paramètre. `raise NotImplementedError` est uniquement un marqueur provisoire, pas le retour attendu pour un id absent.
+
+**Recherche nécessaire — POO :** comprendre pourquoi la définition comporte `self`, alors que l'appel s'écrit `repository.get_by_id(3)` et non `repository.get_by_id(repository, 3)`.
+
 ## 4 — Déplacer la liste et le compteur
 
 Dans le constructeur de `MemoryNoteRepository`, initialiser une liste vide et un compteur à zéro, comme **attributs d'instance**.
@@ -87,7 +102,17 @@ Dans le constructeur de `MemoryNoteRepository`, initialiser une liste vide et un
 2. Implémenter `create()` : incrémenter le compteur, créer un objet `Note`, l'ajouter à la collection et le renvoyer.
 3. Vérifier qu'on stocke maintenant des objets, plus des dictionnaires.
 
-**Validation sans Flask :** créer un repository, ajouter deux notes, vérifier leurs ids et leurs attributs. Créer un deuxième repository : il doit être vide et son compteur indépendant.
+**Amorce du constructeur, à ajouter à la classe existante :**
+
+```python
+def __init__(self):
+    self.notes = []
+    # TODO : initialiser aussi le compteur d'instance.
+```
+
+**Repères pour les méthodes :** `self.notes_created += 1`, `Note(id, title, content)`, `self.notes.append(note)` et `sorted(self.notes, key=lambda note: note.id)`. TODO : choisir leur emplacement et les valeurs à renvoyer. Ne pas utiliser `global` ici.
+
+**Recherche nécessaire — Python :** chercher le paramètre `key` de `sorted()` et le rôle de la petite fonction `lambda` ci-dessus.
 
 ## 5 — Compléter les opérations
 
@@ -97,12 +122,17 @@ Dans le constructeur de `MemoryNoteRepository`, initialiser une liste vide et un
 
 **TODO :** reprendre les algorithmes de la partie 1 et les adapter aux attributs d'instance et aux objets `Note`. Ne pas garder une deuxième copie de la liste dans les routes.
 
-Tests à écrire sans serveur :
+**Amorce pour réutiliser une méthode depuis une autre :**
 
-- Un id inconnu donne `None` en lecture et modification, `False` en suppression.
-- Une modification conserve l'id et ne crée pas de note supplémentaire.
-- Une suppression réussie donne `True` ; une deuxième suppression donne `False`.
-- Après création des ids 1 et 2, suppression de 1 et nouvelle création, on obtient l'id 3.
+```python
+# Au début de update(), dans la classe :
+note = self.get_by_id(note_id)
+# TODO : traiter None avant d'accéder aux attributs de note.
+```
+
+**Repères :** `note.id` remplace `note["id"]`, `note.title = title` met à jour un attribut et `self.notes.remove(note)` retire l'objet trouvé. TODO : écrire vous-même les branches et les retours `None`, `True` ou `False`.
+
+**Recherche nécessaire — POO :** revoir l'appel d'une méthode sur `self` et la différence entre accès par clé de dictionnaire et accès par attribut.
 
 ## 6 — Brancher les routes sur le repository
 
@@ -117,24 +147,40 @@ Pour chaque route, dans l'ordre GET liste, POST, GET individuel, PUT, DELETE :
 3. Traduire les retours `None` ou `False` en erreur JSON 404 lorsque nécessaire.
 4. Transformer les objets renvoyés en dictionnaires avant `jsonify`.
 5. Conserver les mêmes codes HTTP.
-6. Tester avant de passer à la route suivante.
 
 **Recherche nécessaire — Python et Flask :** pourquoi Flask ne sait-il pas directement sérialiser votre objet `Note` ? Comment transformer une liste d'objets en liste de dictionnaires avec une boucle ou une compréhension de liste ?
+
+**Correspondances à utiliser :**
+
+| Route | Appel au stockage |
+|---|---|
+| GET liste | `note_store.list_all()` |
+| POST | `note_store.create(title, content)` |
+| GET individuel | `note_store.get_by_id(note_id)` |
+| PUT | `note_store.update(note_id, title, content)` |
+| DELETE | `note_store.delete(note_id)` |
+
+**Amorce de conversion dans une route individuelle :**
+
+```python
+note = note_store.get_by_id(note_id)
+# TODO : traiter le cas None avant la ligne suivante.
+payload = note.to_dict()
+# TODO : renvoyer payload avec jsonify et le bon statut.
+```
+
+Pour la liste, partir de `payload = []`, parcourir les objets et utiliser `payload.append(note.to_dict())`. TODO : placer ces instructions dans la bonne route, puis essayer une compréhension de liste après recherche.
 
 Attention : pour DELETE, utiliser le booléen uniquement pour décider entre 204 et 404 ; ne pas renvoyer ce booléen comme corps de succès.
 
 Supprimer ensuite les anciennes variables globales `notes` et `notes_created`, ainsi que les instructions `global` devenues inutiles. L'instance partagée `note_store` reste au niveau du module.
-
-## 7 — Vérifier que le comportement n'a pas changé
-
-Rejouer intégralement le scénario de la partie 1. Si le client fonctionnait avant, il doit toujours fonctionner sans modification.
 
 ## Critères de réussite / TODO
 
 - [ ] `Note` représente une note et fournit `to_dict()`.
 - [ ] `MemoryNoteRepository` possède la liste et le compteur d'instance.
 - [ ] Les cinq méthodes respectent précisément le tableau de contrat.
-- [ ] Les classes se testent sans Flask et n'importent pas Flask.
+- [ ] Les classes sont indépendantes de Flask et ne l'importent pas.
 - [ ] Les routes ne parcourent plus la collection et ne gèrent plus les ids.
 - [ ] Les réponses HTTP sont identiques à celles de la partie 1.
 - [ ] Vous savez expliquer pourquoi l'instance du repository est créée hors des routes.

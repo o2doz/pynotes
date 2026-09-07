@@ -6,16 +6,19 @@ Construire les cinq endpoints avec des réponses fictives, puis les faire foncti
 
 Cette progression remplace les anciennes consignes d'architecture. Le [README](../README.md) reste la référence pour le contrat HTTP, les champs et leurs limites. La persistance n'est attendue qu'en partie 3. Contrairement aux autres réponses, une réponse 204 est vide, sans JSON.
 
-Travaillez par petites étapes : écrire, tester, puis continuer. Les données JSON sont fournies ; les fonctions Flask restent à écrire. Les recherches indiquées font partie du travail demandé.
+Travaillez dans l'ordre des étapes, en vous concentrant sur les routes Flask et la manipulation des notes. Les données JSON sont fournies ; les fonctions Flask restent à écrire. Les recherches indiquées font partie du travail demandé.
+
+Les amorces ci-dessous sont à adapter, pas à assembler telles quelles. `...` indique une partie à compléter ; `raise NotImplementedError` marque une méthode pas encore écrite. Ne pas conserver ces marqueurs dans votre rendu.
 
 ## 1 — Découvrir le serveur
 
 1. Depuis `server/`, lancer `uv run server`.
 2. Ouvrir `http://127.0.0.1:5000/`.
 3. Lire `server/src/server/__init__.py` et repérer l'application, le décorateur de route, la fonction appelée et sa réponse.
-4. Conserver la configuration CORS fournie : elle n'est pas à travailler dans cet exercice.
 
 **Recherche nécessaire — Flask :** dans la [documentation](https://flask.palletsprojects.com/en/stable/quickstart/), trouver comment associer une URL et une méthode HTTP à une fonction, renvoyer du JSON avec `jsonify` et préciser un code HTTP.
+
+**Repères de code :** repérer `Flask(__name__)`, `@app.get(...)`, `jsonify(...)` et `app.run(debug=True)` dans le fichier fourni. Dans `return jsonify(donnees), 200`, le second élément fixe le statut HTTP.
 
 **À expliquer :** quelle différence entre l'URL, la méthode HTTP et le nom de la fonction Python ?
 
@@ -32,6 +35,27 @@ Créer une fonction différente pour chaque opération :
 | DELETE | `/notes/<id>` | Corps vide | 204 |
 
 **Recherche nécessaire — Flask :** trouver la syntaxe du convertisseur de route `int`, comment recevoir sa valeur dans la fonction, et comment déclarer les méthodes POST, PUT et DELETE. Chercher également comment renvoyer une réponse vide.
+
+**Amorce à compléter pour la lecture individuelle :**
+
+```python
+@app.get("/notes/<int:note_id>")
+def get_note(note_id):
+    # TODO : construire le dictionnaire fictif avec note_id.
+    # TODO : le renvoyer en JSON avec le statut attendu.
+    raise NotImplementedError
+```
+
+**Décorateurs et noms conseillés pour les autres fonctions :**
+
+| Décorateur | Fonction à écrire |
+|---|---|
+| `@app.get("/notes")` | `list_notes()` |
+| `@app.post("/notes")` | `create_note()` |
+| `@app.put("/notes/<int:note_id>")` | `update_note(note_id)` |
+| `@app.delete("/notes/<int:note_id>")` | `delete_note(note_id)` |
+
+Utiliser `jsonify(donnees)` pour les réponses JSON. Pour DELETE, partir de la forme `return "", code_http` et choisir le bon code.
 
 ### Données à copier pour GET /notes
 
@@ -70,10 +94,6 @@ Renvoyer 204 sans corps : ni message, ni `{}`, ni `null`.
 
 À ce stade, POST, PUT et DELETE ne changent rien au GET : aucune donnée n'est réellement stockée. C'est volontaire.
 
-**Recherche nécessaire — tests HTTP :** avec curl, Postman ou Insomnia, trouver comment choisir une méthode et afficher le code de statut. Le navigateur seul ne suffit pas pour tester simplement les cinq opérations.
-
-**Validation :** relever le code et le corps reçus pour chaque endpoint avant de poursuivre.
-
 ## 3 — Déclarer les deux variables globales
 
 Dans le module de l'application, hors des fonctions de routes, ajouter :
@@ -93,6 +113,8 @@ Commencer avec une liste vide : on abandonne les réponses fictives de l'étape 
 
 **Recherche nécessaire — Python :** chercher la portée des variables et `global`. Expliquer pourquoi réaffecter le compteur depuis une fonction demande cette déclaration, alors qu'appeler `append` sur une liste existante ne réaffecte pas la variable.
 
+**Repères à utiliser dans POST :** `global notes_created` avant toute utilisation du compteur dans la fonction, `notes_created += 1` uniquement après validation, puis `notes.append(nouvelle_note)`. TODO : déterminer où placer ces instructions ; ne pas les exécuter au chargement du module.
+
 **Limite volontaire :** cette solution concerne un serveur de développement dans un seul processus. Un redémarrage, y compris le rechargement automatique après modification du code, efface les notes et le compteur. Ne pas résoudre cela maintenant.
 
 ## 4 — Faire fonctionner GET /notes et POST /notes
@@ -100,6 +122,10 @@ Commencer avec une liste vide : on abandonne les réponses fictives de l'étape 
 ### 4.1 — Lire la liste
 
 Remplacer le JSON fixe de GET par la liste globale. Au démarrage, GET doit renvoyer `[]` avec 200.
+
+**Fonction utile :** `jsonify(notes)`. TODO : l'intégrer au retour de `list_notes()` avec le code attendu, sans mettre la liste entre guillemets.
+
+**Recherche nécessaire — Flask :** vérifier que `jsonify` accepte une liste, pas seulement un dictionnaire.
 
 ### 4.2 — Créer une note
 
@@ -115,6 +141,20 @@ Dans la fonction POST :
 6. Sinon, incrémenter le compteur, construire le dictionnaire avec cet id et l'ajouter à la liste.
 7. Renvoyer la note créée avec 201. Ne pas utiliser un éventuel id envoyé par le client.
 
+**Amorce de lecture du corps :**
+
+```python
+from flask import request  # À intégrer aux imports existants.
+
+# À l'intérieur de la fonction de route :
+data = request.get_json(silent=True)
+# TODO : vérifier isinstance(data, dict) avant d'utiliser data.get(...).
+```
+
+**Fonctions utiles pour la validation :** `isinstance(data, dict)`, `data.get("title")`, `isinstance(title, str)`, `title.strip()` et `len(title)`. Vérifier le type avant d'appeler `strip()`. Appliquer aussi ces contrôles au contenu.
+
+**Fonction conseillée à écrire :** `validate_note_data(data)`, qui renvoie un couple `(title, content)` nettoyé si les données conviennent, ou `None` sinon. À la route de transformer `None` en réponse 400. TODO : choisir et écrire les conditions, puis construire le dictionnaire à ajouter à la liste.
+
 Une petite fonction de validation réutilisable par POST et PUT suffit ; aucune bibliothèque supplémentaire n'est demandée.
 
 Corps de requête à copier :
@@ -129,9 +169,7 @@ Exemple d'erreur à copier :
 {"error": "title and content are required strings"}
 ```
 
-**Recherche nécessaire — outil HTTP :** trouver comment envoyer ce corps avec `Content-Type: application/json`.
-
-**Validation :** créer deux notes différentes. Elles reçoivent les ids 1 et 2 et apparaissent dans GET. Une création invalide ne consomme pas d'id.
+**Recherche nécessaire — Flask/API :** comprendre le rôle de l'en-tête `Content-Type: application/json` lors de la lecture du corps avec `request.get_json()`.
 
 ## 5 — Lire, modifier et supprimer par id
 
@@ -145,6 +183,18 @@ Chercher le dictionnaire ayant l'id demandé. Le renvoyer avec 200 ou, s'il est 
 {"error": "Note not found"}
 ```
 
+**Amorce de recherche :**
+
+```python
+for note in notes:
+    if note["id"] == note_id:
+        # TODO : traiter la note trouvée.
+        ...
+# TODO : traiter l'absence seulement après avoir parcouru toute la liste.
+```
+
+Vous pouvez extraire cette recherche dans `find_note(note_id)`, qui renvoie un dictionnaire ou `None`, pour la réutiliser dans PUT et DELETE.
+
 ### 5.2 — PUT /notes/<id>
 
 1. Chercher la note ; si elle est absente, renvoyer 404.
@@ -152,30 +202,36 @@ Chercher le dictionnaire ayant l'id demandé. Le renvoyer avec 200 ou, s'il est 
 3. Remplacer le titre et le contenu, sans changer l'id.
 4. Renvoyer la note complète avec 200.
 
+**Repères :** réutiliser `find_note(note_id)` si vous l'avez écrite, `request.get_json(silent=True)` et `validate_note_data(data)`. Une affectation comme `note["title"] = title` modifie le dictionnaire trouvé. TODO : compléter le contenu et les retours, après toutes les vérifications.
+
+**Recherche nécessaire — Python :** comprendre pourquoi modifier le dictionnaire trouvé dans la liste modifie aussi les données visibles par GET.
+
 PUT ne crée pas de note et ne modifie pas le compteur. Des données invalides ne doivent pas modifier la note existante.
 
 ### 5.3 — DELETE /notes/<id>
 
 Retirer la note si elle existe : renvoyer 204 sans corps. Sinon, renvoyer l'erreur JSON 404. Ne pas diminuer le compteur.
 
-## 6 — Vérifier le fonctionnement complet
+**Fonction utile :** `notes.remove(note)` retire le dictionnaire trouvé. Chercher d'abord la note, vérifier qu'elle existe, puis la retirer ; ne pas confondre avec `notes.pop(note_id)`, qui utilise un indice.
+
+**Recherche nécessaire — Python :** comparer `list.remove()` et `list.pop()` et vérifier leurs valeurs de retour.
+
+## 6 — Renvoyer les erreurs Flask en JSON
 
 **Recherche nécessaire — Flask :** chercher `errorhandler` pour produire une erreur JSON sur une URL inconnue (404) et une méthode non autorisée (405).
 
+**Amorce de gestionnaire d'erreur :**
+
+```python
+@app.errorhandler(404)
+def handle_not_found(error):
+    # TODO : renvoyer un objet contenant error et le code HTTP 404.
+    raise NotImplementedError
+```
+
+TODO : ajouter le gestionnaire 405 avec un autre nom de fonction.
+
 Pas d'authentification, de permissions ou de fonctionnalité de sécurité supplémentaire : rester sur les opérations demandées et la validation simple du contrat.
-
-Exécuter ce scénario sans redémarrer ni modifier le code entre les étapes :
-
-1. Lire la liste vide → 200 et `[]`.
-2. Créer deux notes → 201, ids 1 et 2.
-3. Lire puis modifier la note 2 → 200, même id et nouveaux textes.
-4. Envoyer un titre vide, puis du JSON mal formé → 400, aucune modification.
-5. Supprimer la note 1 → 204 et corps vide.
-6. Créer une nouvelle note → id 3, pas 2.
-7. Lire, modifier ou supprimer la note 1 → 404.
-8. Vérifier que GET liste les notes 2 et 3, dans cet ordre.
-9. Tester une URL inconnue et une méthode non autorisée → erreurs JSON 404 et 405.
-10. Redémarrer → liste vide : c'est normal pour cette partie.
 
 ## Critères de réussite / TODO
 
